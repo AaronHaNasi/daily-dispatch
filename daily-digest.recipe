@@ -1,0 +1,27 @@
+from calibre.web.feeds.news import BasicNewsRecipe
+
+class DailyDigest(BasicNewsRecipe):
+    title = 'Daily Digest'
+    __author__ = 'Aaron'
+    description = 'Personal daily news digest'
+    language = 'en'
+    oldest_article = 1          # hours/days back — 1 day works well for a daily cron run
+    max_articles_per_feed = 20
+    auto_cleanup = True         # try this first per-feed; override per-source below if it's messy
+    remove_javascript = True
+    no_stylesheets = True
+    ignore_duplicate_articles = frozenset(['title', 'url'])
+
+    feeds = [
+        ('Bridge Michigan',   'https://www.bridgemi.com/feed/?partner-feed=latest-articles'),
+        ('Jacobin',           'https://jacobin.com/feed'),
+        ('Democracy Now!',    'https://www.democracynow.org/democracynow.rss'),
+        ('The Conversation',  'https://theconversation.com/us/articles.atom'),
+        ('Ars Technica',      'https://feeds.arstechnica.com/arstechnica/index'),
+        ('The Register',      'https://www.theregister.com/headlines.atom'),
+        ('Hacker News',       'https://hnrss.org/frontpage'),
+        ('NPR',               'https://www.npr.org/rss/rss.php?id=1001'),
+        ('BBC News',          'https://feeds.bbci.co.uk/news/rss.xml'),
+        # Add Politico / AP sections here once you confirm exact feed URLs / built-in recipe status
+        # ('Politico', 'https://rss.politico.com/politics-news.xml'),
+    ]
