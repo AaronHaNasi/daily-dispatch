@@ -1,0 +1,10 @@
+# Copy to terraform.tfvars and fill in. None of these values are secret —
+# the actual OAuth credential lives in Secret Manager, not here.
+
+project_id       = "daily-dispatch-504917"
+region           = "us-central1"
+drive_folder_id  = "13sJYzBSwjPr5toDAG48JqPkmjSEwgqtE"
+github_repo      = "AaronHaNasi/daily-dispatch"
+
+# Built and pushed separately: gcloud builds submit --region=us-central1 --tag=<this> .
+container_image = "us-central1-docker.pkg.dev/daily-dispatch-504917/daily-dispatch/daily-dispatch:latest"

@@ -1,0 +1,18 @@
+# Local OAuth artifacts — never commit credentials
+client_secret*.json
+*token*.json
+
+# OpenTofu
+infra/.terraform/
+infra/terraform.tfvars
+infra/*.tfplan
+*.tfstate
+*.tfstate.*
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store

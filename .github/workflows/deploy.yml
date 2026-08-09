@@ -1,0 +1,48 @@
+name: Deploy Cloud Run Job
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - generate-dispatch.py
+      - daily-digest.recipe
+      - requirements.txt
+      - .github/workflows/deploy.yml
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: daily-dispatch-504917
+  REGION: us-central1
+  REPO: daily-dispatch
+  JOB_NAME: daily-dispatch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+          workload_identity_provider: ${{ vars.WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Build and push image
+        run: |
+          IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${JOB_NAME}:${{ github.sha }}"
+          gcloud builds submit --region="${REGION}" --tag="${IMAGE}" .
+          echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
+
+      - name: Update Cloud Run Job
+        run: |
+          gcloud run jobs update "${JOB_NAME}" \
+            --region="${REGION}" \
+            --image="${IMAGE}"

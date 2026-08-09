@@ -22,6 +22,8 @@ class DailyDigest(BasicNewsRecipe):
         ('Hacker News',       'https://hnrss.org/frontpage'),
         ('NPR',               'https://www.npr.org/rss/rss.php?id=1001'),
         ('BBC News',          'https://feeds.bbci.co.uk/news/rss.xml'),
-        # Add Politico / AP sections here once you confirm exact feed URLs / built-in recipe status
-        # ('Politico', 'https://rss.politico.com/politics-news.xml'),
+        ('Politico',          'https://www.politico.com/rss/politicopicks.xml'),
+        ('Politico Politics', 'https://rss.politico.com/politics-news.xml'),
+        # AP has no RSS feed (discontinued); skipping — AP content already
+        # syndicates through Bridge Michigan / other outlets in this list.
     ]
