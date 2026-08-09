@@ -196,6 +196,27 @@ resource "google_cloud_run_v2_job_iam_member" "deployer_can_update" {
   member   = "serviceAccount:${google_service_account.github_deployer.email}"
 }
 
+# Same staging-bucket access gap as compute_default_can_build above, but for
+# the WIF-impersonated deploy SA: `gcloud builds submit` in the workflow runs
+# as github_deployer, which also needs storage access to
+# gs://PROJECT_ID_cloudbuild to upload the checked-out source.
+resource "google_project_iam_member" "deployer_can_build" {
+  project = var.project_id
+  role    = "roles/cloudbuild.builds.builder"
+  member  = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
+# `gcloud builds submit` actually executes the build as the Compute Engine
+# default SA (confirmed: its unique ID matches the "caller does not have
+# permission to act as" error). The submitting identity (github_deployer)
+# needs serviceAccountUser on that runtime SA to be allowed to kick off a
+# build that acts as it — separate from the storage grant above.
+resource "google_service_account_iam_member" "deployer_can_actas_compute_default" {
+  service_account_id = "projects/${var.project_id}/serviceAccounts/${data.google_project.current.number}-compute@developer.gserviceaccount.com"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github" {
   project                   = var.project_id
   workload_identity_pool_id = "github"
