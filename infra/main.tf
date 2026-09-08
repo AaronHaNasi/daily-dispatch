@@ -217,6 +217,16 @@ resource "google_service_account_iam_member" "deployer_can_actas_compute_default
   member             = "serviceAccount:${google_service_account.github_deployer.email}"
 }
 
+# `gcloud run jobs update` re-validates against the job's runtime identity
+# even when only --image changes, so the deployer also needs actAs on
+# job_runtime (daily-dispatch-runtime@...) — separate from the actAs grant
+# above for the Compute Engine default SA that `gcloud builds submit` runs as.
+resource "google_service_account_iam_member" "deployer_can_actas_job_runtime" {
+  service_account_id = google_service_account.job_runtime.name
+  role                = "roles/iam.serviceAccountUser"
+  member              = "serviceAccount:${google_service_account.github_deployer.email}"
+}
+
 resource "google_iam_workload_identity_pool" "github" {
   project                   = var.project_id
   workload_identity_pool_id = "github"
