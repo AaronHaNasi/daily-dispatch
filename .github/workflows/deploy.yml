@@ -37,8 +37,33 @@ jobs:
 
       - name: Build and push image
         run: |
+          set -euo pipefail
           IMAGE="${REGION}-docker.pkg.dev/${PROJECT_ID}/${REPO}/${JOB_NAME}:${{ github.sha }}"
-          gcloud builds submit --region="${REGION}" --tag="${IMAGE}" .
+
+          # Submit async and poll build status instead of streaming logs:
+          # the deploy service account can read build status but not the
+          # default Cloud Build logs bucket, which makes a synchronous
+          # `gcloud builds submit` exit 1 even after a successful build.
+          BUILD_ID=$(gcloud builds submit --region="${REGION}" --tag="${IMAGE}" --async --format="value(id)" .)
+          echo "Submitted build ${BUILD_ID}, polling for completion..."
+
+          while true; do
+            STATUS=$(gcloud builds describe "${BUILD_ID}" --region="${REGION}" --format="value(status)")
+            case "${STATUS}" in
+              SUCCESS)
+                echo "Build ${BUILD_ID} succeeded."
+                break
+                ;;
+              WORKING|QUEUED|PENDING)
+                sleep 10
+                ;;
+              *)
+                echo "Build ${BUILD_ID} ended with status: ${STATUS}" >&2
+                exit 1
+                ;;
+            esac
+          done
+
           echo "IMAGE=${IMAGE}" >> "$GITHUB_ENV"
 
       - name: Update Cloud Run Job
