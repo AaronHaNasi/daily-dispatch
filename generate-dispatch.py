@@ -44,6 +44,18 @@ def upload_epub(service, path: Path, folder_id: str) -> str:
     uploaded = service.files().create(body=metadata, media_body=media, fields="id").execute()
     return uploaded["id"]
 
+def clean_epub(service, folder_id: str) -> None:
+    """Remove EPUB files after a week to avoid filling up Google Drive storage.""""
+    # Get list of files
+    results = service.files().list(
+        q=f"'{folder_id}' in parents and mimeType='application/epub+zip'",
+        fields="files(id, name, createdTime)",
+    ).execute()
+    for file in results.get("files", []):
+        created_time = datetime.fromisoformat(file["createdTime"].replace("Z", "+00:00"))
+        if (datetime.now(timezone.utc) - created_time).days > 7:
+            print(f"[{datetime.now(timezone.utc).isoformat()}] Deleting old EPUB {file['name']} (id={file['id']})")
+            service.files().delete(fileId=file["id"]).execute()
 
 def main() -> int:
     folder_id = os.environ["GDRIVE_FOLDER_ID"]
@@ -57,7 +69,7 @@ def main() -> int:
     print(f"[{datetime.now(timezone.utc).isoformat()}] Uploading to Drive folder {folder_id}")
     service = drive_client()
     file_id = upload_epub(service, output_path, folder_id)
-
+    clean_epub(service, folder_id)
     print(f"[{datetime.now(timezone.utc).isoformat()}] Uploaded file id={file_id}")
     return 0
 
