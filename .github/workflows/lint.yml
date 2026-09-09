@@ -31,11 +31,11 @@ jobs:
     
         - name: Initialize OpenTofu
           run: |
-            opentofu init infra
+            tofu init infra
     
         - name: Validate OpenTofu configuration
           run: |
-            opentofu validate infra
+            tofu validate infra
     python-lint:
         runs-on: ubuntu-latest
         steps:
