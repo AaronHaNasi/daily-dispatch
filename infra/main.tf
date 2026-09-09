@@ -223,8 +223,8 @@ resource "google_service_account_iam_member" "deployer_can_actas_compute_default
 # above for the Compute Engine default SA that `gcloud builds submit` runs as.
 resource "google_service_account_iam_member" "deployer_can_actas_job_runtime" {
   service_account_id = google_service_account.job_runtime.name
-  role                = "roles/iam.serviceAccountUser"
-  member              = "serviceAccount:${google_service_account.github_deployer.email}"
+  role               = "roles/iam.serviceAccountUser"
+  member             = "serviceAccount:${google_service_account.github_deployer.email}"
 }
 
 resource "google_iam_workload_identity_pool" "github" {
@@ -255,6 +255,38 @@ resource "google_iam_workload_identity_pool_provider" "github_repo" {
 
 resource "google_service_account_iam_member" "github_can_impersonate_deployer" {
   service_account_id = google_service_account.github_deployer.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repo}"
+}
+
+# --- GitHub Actions infra pipeline (same WIF pool, separate identity) ---
+#
+# `tofu apply` manages IAM bindings, service accounts, and the WIF pool
+# itself, which needs project-owner-equivalent access regardless of how
+# tightly the role list is drawn (projectIamAdmin + serviceAccountAdmin can
+# already grant themselves anything). roles/owner is used directly here
+# rather than pretending otherwise — kept as a separate SA from
+# github_deployer above so a compromised deploy-code run (build/push/update
+# only) can't reach it.
+
+resource "google_service_account" "tofu_deployer" {
+  project      = var.project_id
+  account_id   = "daily-dispatch-tofu"
+  display_name = "GitHub Actions OpenTofu identity for daily-dispatch"
+}
+
+resource "google_project_iam_member" "tofu_deployer_owner" {
+  project = var.project_id
+  role    = "roles/owner"
+  member  = "serviceAccount:${google_service_account.tofu_deployer.email}"
+}
+
+# The state bucket (see providers.tf) lives in this same project, so
+# roles/owner above already covers reading/writing/locking state there —
+# no separate storage grant needed.
+
+resource "google_service_account_iam_member" "github_can_impersonate_tofu_deployer" {
+  service_account_id = google_service_account.tofu_deployer.name
   role               = "roles/iam.workloadIdentityUser"
   member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repo}"
 }

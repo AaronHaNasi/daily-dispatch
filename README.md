@@ -103,11 +103,12 @@ Drive folder before trusting the daily Cloud Scheduler trigger.
 
 ### 8. Wire up GitHub Actions
 
-After step 5's `tofu apply`, grab the two outputs it needs:
+After step 5's `tofu apply`, grab the outputs it needs:
 
 ```sh
 tofu -chdir=infra output workload_identity_provider
 tofu -chdir=infra output github_deployer_service_account
+tofu -chdir=infra output github_tofu_service_account
 ```
 
 Set them as repo variables (Settings → Secrets and variables → Actions →
@@ -117,11 +118,26 @@ credential to leak:
 ```sh
 gh variable set WIF_PROVIDER --body "<workload_identity_provider output>"
 gh variable set GCP_DEPLOY_SA --body "<github_deployer_service_account output>"
+gh variable set GCP_TOFU_SA --body "<github_tofu_service_account output>"
 ```
 
-From then on, pushing changes to `Dockerfile`, `generate-dispatch.py`,
-`daily-digest.recipe`, or `requirements.txt` on `main` rebuilds the image and
-updates the Cloud Run Job automatically (`.github/workflows/deploy.yml`).
+`GCP_DEPLOY_SA` (`daily-dispatch-deployer@...`) is scoped narrowly to
+build/push/update-job and is used by the `deploy-code` job. `GCP_TOFU_SA`
+(`daily-dispatch-tofu@...`) holds `roles/owner` and is used only by the
+`deploy-infra` job to run `tofu plan`/`tofu apply` — kept as a separate
+identity so a compromised `deploy-code` run can't reach owner-level access.
+Both are impersonable only from this one repo (`WIF_PROVIDER`'s
+`attribute_condition` in `infra/main.tf`).
+
+From then on, pushing changes to `infra/**` on `main` runs `tofu apply` in
+CI, and pushing changes to `Dockerfile`, `generate-dispatch.py`,
+`daily-digest.recipe`, or `requirements.txt` rebuilds the image and updates
+the Cloud Run Job — both via `.github/workflows/deploy.yml`.
+
+Note the bootstrap order: `daily-dispatch-tofu` (the SA that lets CI run
+`tofu apply`) is itself created *by* `tofu apply`, so the very first apply
+that introduces it must still be run locally as in step 5, with your own
+`gcloud` credentials. Only later infra changes get to go through CI.
 
 ### 9. KOReader on the Kobo
 

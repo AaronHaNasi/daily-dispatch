@@ -23,3 +23,8 @@ output "workload_identity_provider" {
   description = "Paste into the GitHub Actions workflow's `workload_identity_provider` field"
   value       = google_iam_workload_identity_pool_provider.github_repo.name
 }
+
+output "github_tofu_service_account" {
+  description = "Paste into the GitHub Actions workflow's deploy-infra `service_account` field"
+  value       = google_service_account.tofu_deployer.email
+}
