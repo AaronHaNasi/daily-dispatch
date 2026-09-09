@@ -43,9 +43,7 @@ def upload_epub(service, path: Path, folder_id: str) -> str:
     metadata = {"name": path.name, "parents": [folder_id]}
     media = MediaFileUpload(str(path), mimetype="application/epub+zip")
     uploaded = (
-        service.files()
-        .create(body=metadata, media_body=media, fields="id")
-        .execute()
+        service.files().create(body=metadata, media_body=media, fields="id").execute()
     )
     return uploaded["id"]
 
@@ -53,20 +51,21 @@ def upload_epub(service, path: Path, folder_id: str) -> str:
 def clean_epub(service, folder_id: str) -> None:
     """Remove EPUB files older than a week to save Drive storage."""
     # Get list of files
-    results = service.files().list(
-        q=f"'{folder_id}' in parents and mimeType='application/epub+zip'",
-        fields="files(id, name, createdTime)",
-    ).execute()
+    results = (
+        service.files()
+        .list(
+            q=f"'{folder_id}' in parents and mimeType='application/epub+zip'",
+            fields="files(id, name, createdTime)",
+        )
+        .execute()
+    )
     for file in results.get("files", []):
         created_time = datetime.fromisoformat(
             file["createdTime"].replace("Z", "+00:00")
         )
         if (datetime.now(timezone.utc) - created_time).days > 7:
             now = datetime.now(timezone.utc).isoformat()
-            print(
-                f"[{now}] Deleting old EPUB {file['name']} "
-                f"(id={file['id']})"
-            )
+            print(f"[{now}] Deleting old EPUB {file['name']} " f"(id={file['id']})")
             service.files().delete(fileId=file["id"]).execute()
 
 
