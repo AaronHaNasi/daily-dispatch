@@ -58,19 +58,19 @@ jobs:
 
       - name: Initialize OpenTofu
         run: |
-          opentofu init infra
+          tofu init infra
 
       - name: Validate OpenTofu configuration
         run: |
-          opentofu validate infra
+          tofu validate infra
 
       - name: Plan OpenTofu changes
         run: |
-          opentofu plan infra
+          tofu plan infra
 
       - name: Apply OpenTofu changes
         run: |
-          opentofu apply -auto-approve infra
+          tofu apply -auto-approve infra
 
   deploy-code:
     needs: [changes, deploy-infra]
