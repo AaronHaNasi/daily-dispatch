@@ -26,16 +26,16 @@ jobs:
     
         - name: OpenTofu fmt
           id: fmt
-          run: tofu fmt -check
+          run: tofu -chdir=infra fmt -check
           continue-on-error: true
     
         - name: Initialize OpenTofu
           run: |
-            tofu init infra
+            tofu -chdir=infra init
     
         - name: Validate OpenTofu configuration
           run: |
-            tofu validate infra
+            tofu -chdir=infra validate
     python-lint:
         runs-on: ubuntu-latest
         steps:
