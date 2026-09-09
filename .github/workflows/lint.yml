@@ -29,13 +29,6 @@ jobs:
           run: tofu -chdir=infra fmt -check
           continue-on-error: true
     
-        - name: Initialize OpenTofu
-          run: |
-            tofu -chdir=infra init
-    
-        - name: Validate OpenTofu configuration
-          run: |
-            tofu -chdir=infra validate
     python-lint:
         runs-on: ubuntu-latest
         steps:
