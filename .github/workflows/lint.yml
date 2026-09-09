@@ -1,0 +1,64 @@
+name: Run lint checks
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - .github/workflows/lint.yml
+      - .github/workflows/deploy.yml
+      - .github/workflows/deploy-infra-changes.yml
+      - .github/workflows/deploy-infra.yml
+      - .github/workflows/test.yml
+      - .github/workflows/test-infra.yml
+      - .github/workflows/test-infra-changes.yml
+
+permissions:
+    contents: read
+
+jobs:
+    terraform-lint:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v4
+    
+        - name: Set up OpenTofu
+          uses: opentofu/setup-opentofu@v2 
+    
+        - name: OpenTofu fmt
+          id: fmt
+          run: tofu fmt -check
+          continue-on-error: true
+    
+        - name: Initialize OpenTofu
+          run: |
+            opentofu init infra
+    
+        - name: Validate OpenTofu configuration
+          run: |
+            opentofu validate infra
+    python-lint:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v4
+    
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: 3.11
+    
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install flake8 black isort
+    
+        - name: Run flake8
+          run: |
+            flake8 generate-dispatch.py
+    
+        - name: Run black
+          run: |
+            black --check generate-dispatch.py
+    
+        - name: Run isort
+          run: |
+            isort --check-only generate-dispatch.py
