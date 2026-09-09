@@ -45,7 +45,7 @@ def upload_epub(service, path: Path, folder_id: str) -> str:
     return uploaded["id"]
 
 def clean_epub(service, folder_id: str) -> None:
-    """Remove EPUB files after a week to avoid filling up Google Drive storage.""""
+    """Remove EPUB files after a week to avoid filling up Google Drive storage."""
     # Get list of files
     results = service.files().list(
         q=f"'{folder_id}' in parents and mimeType='application/epub+zip'",
