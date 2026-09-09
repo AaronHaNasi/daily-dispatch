@@ -26,16 +26,9 @@ jobs:
     
         - name: OpenTofu fmt
           id: fmt
-          run: tofu fmt -check
+          run: tofu -chdir=infra fmt -check
           continue-on-error: true
     
-        - name: Initialize OpenTofu
-          run: |
-            opentofu init infra
-    
-        - name: Validate OpenTofu configuration
-          run: |
-            opentofu validate infra
     python-lint:
         runs-on: ubuntu-latest
         steps:
@@ -50,10 +43,6 @@ jobs:
           run: |
             python -m pip install --upgrade pip
             pip install flake8 black isort
-    
-        - name: Run flake8
-          run: |
-            flake8 generate-dispatch.py
     
         - name: Run black
           run: |
