@@ -22,6 +22,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         fonts-liberation \
         libegl1 \
         libopengl0 \
+        libglx0 \
+        libxkbcommon0 \
+        libxkbcommon-x11-0 \
+        libnss3 \
+        libgbm1 \
+        libasound2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Pin explicitly for reproducible builds; bump deliberately, not "latest".
