@@ -1,9 +1,10 @@
-name: Deploy Cloud Run Job
+name: Deploy
 
 on:
   push:
     branches: [main]
     paths:
+      - infra/**
       - Dockerfile
       - generate-dispatch.py
       - daily-digest.recipe
@@ -12,7 +13,6 @@ on:
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   PROJECT_ID: daily-dispatch-504917
@@ -21,8 +21,67 @@ env:
   JOB_NAME: daily-dispatch
 
 jobs:
-  build-and-deploy:
+  changes:
     runs-on: ubuntu-latest
+    outputs:
+      infra: ${{ steps.filter.outputs.infra }}
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            infra:
+              - 'infra/**'
+            code:
+              - 'Dockerfile'
+              - 'generate-dispatch.py'
+              - 'daily-digest.recipe'
+              - 'requirements.txt'
+
+  deploy-infra:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up OpenTofu
+        uses: opentofu/setup-opentofu@v2
+
+      - name: OpenTofu fmt
+        id: fmt
+        run: tofu fmt -check
+        continue-on-error: true
+
+      - name: Initialize OpenTofu
+        run: |
+          opentofu init infra
+
+      - name: Validate OpenTofu configuration
+        run: |
+          opentofu validate infra
+
+      - name: Plan OpenTofu changes
+        run: |
+          opentofu plan infra
+
+      - name: Apply OpenTofu changes
+        run: |
+          opentofu apply -auto-approve infra
+
+  deploy-code:
+    needs: [changes, deploy-infra]
+    if: |
+      always() &&
+      needs.changes.outputs.code == 'true' &&
+      (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v4
 
