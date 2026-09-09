@@ -53,24 +53,24 @@ jobs:
 
       - name: OpenTofu fmt
         id: fmt
-        run: tofu fmt -check
+        run: tofu -chdir=infra fmt -check
         continue-on-error: true
 
       - name: Initialize OpenTofu
         run: |
-          tofu init infra
+          tofu -chdir=infra init
 
       - name: Validate OpenTofu configuration
         run: |
-          tofu validate infra
+          tofu -chdir=infra validate
 
       - name: Plan OpenTofu changes
         run: |
-          tofu plan infra
+          tofu -chdir=infra plan
 
       - name: Apply OpenTofu changes
         run: |
-          tofu apply -auto-approve infra
+          tofu -chdir=infra apply -auto-approve
 
   deploy-code:
     needs: [changes, deploy-infra]
